@@ -1,0 +1,553 @@
+---
+title: "OR Team Training Declaring Leadership Codes"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+# Change log - 2020-07-19
+# changed code to allow "Id" to appear in the "agree4", "agree3", and "agree2" tables. Since some textId's may be duplicated it's useful to use Id's since ID's are unique for each excerpt.
+```
+
+
+```{r include=FALSE, echo = FALSE, warning = FALSE, results=FALSE}
+# Note - JB's html used "cleanrmd" for the rmarkdown theme. The theme can be downloaded here:
+  # devtools::install_github("gadenbuie/cleanrmd")
+
+library(openxlsx)
+library(readxl)
+library(stringr)
+library(stringi)
+library(dplyr)
+library(tidyverse)
+library(data.table)
+library(tinytex)
+library(kableExtra)
+library(knitr)
+library(reactable)
+library(sjmisc)
+library(summarytools)
+library(reactable)
+library(htmltools)
+library(openxlsx)
+
+#Create working directory ------------------------------------------------
+#dirA <- "AY19 Debrief Analysis/Analysis/2020-06-16 Reliability/"
+
+#setwd(dirA)
+#
+getwd()
+
+# Import coder spreadsheets 
+julie <- read_excel("coding_julie_com.xlsx") %>% 
+   mutate("id" = as.character("id"))
+
+hannah <- read_excel("coding_hannah_com.xlsx")%>% 
+   mutate("id" = as.character("id"))
+
+amy <- read_excel("coding_amy_com.xlsx")%>% 
+   mutate("id" = as.character("id"))
+
+mae<-read_excel("coding_mae_com.xlsx")%>% 
+   mutate("id" = as.character("id"))
+
+# The "cleaned excerpts are excerpts with time codes removed, and spaces cleaned, etc.)
+cleaned_excerpts<-read_excel("cleaned_excerpts.xlsx")
+
+#imports code definitions (used in part 2)`
+codeDef<- read_excel("01definitions.xlsx")
+
+### Guidance
+#Here are the columns from the "Mae" file. All coder files have the same columns.
+#The only column with data needed for this analysis from the "Mae" file is contained in the "Mae" column. 
+#Likewise, the only column needed frome the "Hannah" file, is from the "Hannah" column. 
+
+### Guidance
+
+#Extract coder value and excerpt id from data frames, while not selecting empty columns with other coders names.
+#The id column will be used to match the data to a master file (which also contains the excerpt id)
+
+# Extract coder value and key from data frames, while not selecting empty columns with other coders names)
+
+# start with mae source file and rename to mae1   %>%
+# 
+# # keeps "Mae" column and "id"
+# # removes unneeded columns
+
+mae1 <- mae %>%    
+    select(-Amy, -Hannah, -Julie) %>%  
+    select(id, Mae)                     
+
+amy1 <- amy %>%
+    select(-Mae, -Hannah, -Julie) %>%
+    select(id, Amy)
+
+hannah1 <- hannah %>%
+    select(-Amy, -Mae, -Julie) %>%
+    select(id, Hannah)
+
+julie1 <- julie %>%
+    select(-Amy, -Hannah, -Mae, -...12)
+
+# Example columns from "mae" file
+names(mae1)
+
+### Guidance
+#Add coder data to julie dataframe which will serve as the new source file.
+#The name before <- is the new file being created
+# inner_join()
+# return all rows from x (julie1) where there are matching values in y (mae1), and all columns from x (julie1) and y (mae1). If there are multiple matches between x and y, all combination of the matches are returned.
+# The id column is used to match the dataframes.
+
+#btw
+#jm stands for JulieMae adds the new column Mae to the Julie data frame
+
+# add coder data to julie dataframe which will serve as the new source file.
+# the name before <- is the new file being created
+# inner_join()
+# return all rows from x (julie1) where there are matching values in y (mae1), and all columns from x (julie1) and y (mae1). If there are multiple matches between x and y, all combination of the matches are returned.
+# The id column is used to match the dataframes.
+# 
+
+### Guidance
+
+
+#jmh stands for JulieMaeHannah 
+#jmha stands for JulieMaeHannahAmy
+ 
+jm <- inner_join(julie1, mae1, by = "id")  
+jmh <- inner_join(jm, hannah1, by = "id")
+jmha <- inner_join(jmh, amy1, by = "id")
+
+names(jm) 
+names(jmh)
+names(jmha)
+
+### Guidance
+
+#Here are the columns from the cleaned excerpts
+
+names(cleaned_excerpts)
+
+#For this step we remove the unneeded columns. We keep the "cleaned" column which contains the excerpts, and the id column so we can match the data.
+# removes unneed columns
+cleaned <- cleaned_excerpts[ -c(9:18, 2:7) ]
+names(cleaned)
+
+### Guidance
+#This step joins the coder data with the cleaned excerpt data using the "id" column as a key
+
+jmha.0 <- inner_join(jmha, cleaned, by = "id")
+
+names(jmha.0)
+
+### Guidance
+#This step shortens the name of the code in all the coder columns, for example,
+#"Knowing who the leader is and/or not hearing/seeing the declaration"
+#is changed to "Knowing"
+# "knowing who the leader is...." and "Not hearing/seeing or knowing..." are the same codes
+# The following script creates a new recoded variable that combines both codes
+# "knowing who the leader is...." and "Not hearing/seeing or knowing..." are the same codes
+jmha.1 <- jmha.0 %>%
+    mutate(Julie = str_replace_all(string = Julie, pattern = "Knowing who the leader is and/or not hearing/seeing the declaration",
+                                   replacement = "Knowing")) %>%
+    mutate(Amy = str_replace_all(string = Amy, pattern = "Knowing who the leader is and/or not hearing/seeing the declaration",
+                                 replacement = "Knowing")) %>%
+    mutate(Hannah = str_replace_all(string = Hannah, pattern = "Knowing who the leader is and/or not hearing/seeing the declaration",
+                                    replacement = "Knowing")) %>%
+    mutate(Mae = str_replace_all(string = Mae, pattern = "Knowing who the leader is and/or not hearing/seeing the declaration",
+                                 replacement = "Knowing")) %>% 
+  
+      mutate(Julie = str_replace_all(string = Julie, pattern = "Not hearing/seeing or knowing who the leader is",
+                                   replacement = "Knowing")) %>%
+    mutate(Amy = str_replace_all(string = Amy, pattern = "Not hearing/seeing or knowing who the leader is",
+                                 replacement = "Knowing")) %>%
+    mutate(Hannah = str_replace_all(string = Hannah, pattern = "Not hearing/seeing or knowing who the leader is",
+                                    replacement = "Knowing")) %>%
+    mutate(Mae = str_replace_all(string = Mae, pattern = "Not hearing/seeing or knowing who the leader is",
+                                 replacement = "Knowing")) %>% 
+    mutate(Julie = str_replace_all(string = Julie, pattern = "Determining who should lead",
+                                   replacement = "DetermingWho")) %>%
+    mutate(Amy = str_replace_all(string = Amy, pattern = "Determining who should lead",
+                                   replacement = "DetermingWho")) %>%
+    mutate(Hannah = str_replace_all(string = Hannah, pattern = "Determining who should lead",
+                                   replacement = "DetermingWho")) %>%
+    mutate(Mae = str_replace_all(string = Mae, pattern = "Determining who should lead",
+                                   replacement = "DetermingWho")) %>%
+    mutate(Julie = str_replace_all(string = Julie, pattern = "How declaring leadership/red hats help",
+                                   replacement = "HatsHelp")) %>%
+    mutate(Amy = str_replace_all(string = Amy, pattern = "How declaring leadership/red hats help",
+                                   replacement = "HatsHelp")) %>%
+    mutate(Hannah = str_replace_all(string = Hannah, pattern = "How declaring leadership/red hats help",
+                                   replacement = "HatsHelp")) %>%
+    mutate(Mae = str_replace_all(string = Mae, pattern = "How declaring leadership/red hats help",
+                                   replacement = "HatsHelp")) %>%
+  mutate(Julie = str_replace_all(string = Julie, pattern = "Operational aspects of declaring leadership",
+                                   replacement = "Operational")) %>%
+    mutate(Amy = str_replace_all(string = Amy, pattern = "Operational aspects of declaring leadership",
+                                   replacement = "Operational")) %>%
+    mutate(Hannah = str_replace_all(string = Hannah, pattern = "Operational aspects of declaring leadership",
+                                   replacement = "Operational")) %>%
+    mutate(Mae = str_replace_all(string = Mae, pattern = "Operational aspects of declaring leadership",
+                                   replacement = "Operational")) %>%
+    mutate(Julie = str_replace_all(string = Julie, pattern = "Leaders feelings surrounding declaration of leadership",
+                                   replacement = "Feelings")) %>%
+    mutate(Amy = str_replace_all(string = Amy, pattern = "Leaders feelings surrounding declaration of leadership",
+                                   replacement = "Feelings")) %>%
+    mutate(Hannah = str_replace_all(string = Hannah, pattern = "Leaders feelings surrounding declaration of leadership",
+                                   replacement = "Feelings")) %>%
+    mutate(Mae = str_replace_all(string = Mae, pattern = "Leaders feelings surrounding declaration of leadership",
+                                   replacement = "Feelings")) %>%
+      mutate(Julie = str_replace_all(string = Julie, pattern = "Doesn't belong",replacement = "NotBelong")) %>%
+    mutate(Amy = str_replace_all(string = Amy, pattern = "Doesn't belong",replacement = "NotBelong")) %>%
+    mutate(Hannah = str_replace_all(string = Hannah, pattern = "Doesn't belong",replacement = "NotBelong")) %>%
+    mutate(Mae = str_replace_all(string = Mae, pattern = "Doesn't belong",replacement = "NotBelong")) 
+
+source1 <- jmha.1
+
+#Changes to JB's codes
+
+#changes the value in the coder column using the "id" column which corresponds to the textID number
+##187 Knowing jb 
+source1[source1$id==1, "Julie"] <- "Knowing" 
+#224 Knowing jb 
+source1[source1$id==59, "Julie"] <- "Knowing" 
+#288 Knowing jb 
+source1[source1$id==187, "Julie"] <- "Knowing" 
+
+##281 HatsHelp jb
+source1[source1$id==167, "Julie"] <- "HatsHelp" 
+#241 HatsHelp jb
+source1[source1$id==77, "Julie"] <- "HatsHelp" 
+#312 HatsHelp jb
+source1[source1$id==224, "Julie"] <- "HatsHelp" 
+#295 HatsHelp jb
+source1[source1$id==207, "Julie"] <- "HatsHelp" 
+
+#285 DeterminingWho
+source1[source1$id==182, "Julie"] <- "DeterminingWho" 
+#344 DetermingWho
+source1[source1$id==367, "Julie"] <- "DeterminingWho"
+#268 DetermingWho
+source1[source1$id==127, "Julie"] <- "DeterminingWho"
+
+#Changes to Mae's codes
+
+#322 HatsHelp mw
+source1[source1$id==54, "Mae"] <- "HatsHelp" 
+#338 HatsHelp mw
+source1[source1$id==321, "Mae"] <- "HatsHelp"
+#220 HatsHelp mw
+source1[source1$id==247, "Mae"] <- "HatsHelp" 
+
+#276 DetermingWho
+source1[source1$id==161, "Mae"] <- "DeterminingWho" 
+
+##269 Operational
+source1[source1$id==147, "Mae"] <- "Operational" 
+#337 Operational
+source1[source1$id==284, "Mae"] <- "Operational" 
+#296 Operational
+source1[source1$id==208, "Mae"] <- "Operational" 
+
+#355  Feelings
+source1[source1$id==393, "Mae"] <- "Feelings" 
+
+#246 Feelings
+source1[source1$id==84, "Mae"] <- "Feelings" 
+
+# delete id # 248 (it's is a duplicate of id 247
+source2 <- source1[!(source1$id==248),]
+
+# delete id # 284 (it's is a duplicate of id 281
+source2 <- source2[!(source2$id==281),]
+
+#delete id #33, it's a duplicate of 18 
+source2 <- source2[!(source2$id==33),]
+
+#213 Faculty This excerpt should be removed id 45
+#On 2020-07-20 jb confirmed this is a faculty statement (statement by A.W)
+# "You can't always talk to the surgeons because they're so task focused so that's what we suggest ..." Case 3, 3-29-2019
+source2 <- source2[!(source2$id==45),]
+
+#delete id 284 it's a duplicate of 283
+source2 <- source2[!(source2$id==284),]
+
+##delete id = 378
+#You did not have a hat! [crosstalk 00:00:29:45]**
+#while a learner mentioned "you did not have a hat" this exerpt doesn't seem related to the code "declaring leadership'
+source2 <- source2[!(source2$id==378),]
+
+
+#This code counts the number of times a code is listed in the Julie, Hannah, Mae and Amy columns and creates a new variable for each of the code names.
+
+# Rename the dataframe
+jmha.2 <- source2
+# Note on alternate approach that doesn't work
+# sjmisc is a useful/easy package, but using sjmisc's row_count with reactable doesn't work
+# jmha.1$determineWho <- row_count(jmha.1, julie:Amy, count = "Determining who should lead", append = TRUE)
+# use the following approach instead:
+jmha.2 <- row_count(jmha.2, Julie:Amy, count = "DetermingWho", var = "determineWho")
+jmha.2 <- row_count(jmha.2, Julie:Amy, count = "HatsHelp",  var = "hatsHelp")
+jmha.2 <- row_count(jmha.2, Julie:Amy, count = "Knowing",  var = "know")
+jmha.2 <- row_count(jmha.2, Julie:Amy, count = "Operational", var = "operational")
+jmha.2 <- row_count(jmha.2, Julie:Amy, count =  "Feelings",  var = "feelings")
+jmha.2 <- row_count(jmha.2, Julie:Amy, count =  "NotBelong",  var = "notBelong")
+
+### Guidance
+
+#Renames columns
+#For example, the old column name is textI.jb the new name is textID
+
+# Rename column (using R base)
+names(jmha.2)[names(jmha.2) == "textI.jb"] <- "textID"
+names(jmha.2)[names(jmha.2) == "textN.jb"] <- "textName"
+names(jmha.2)[names(jmha.2) == "cleaned"] <- "excerpt"
+
+# Example of renaming columns using dplyr
+#all <- jmha.1 %>% rename(textID = textI.jb, textNumber = textN.jb)
+
+### Guidance
+
+#This step creates columns which indicate the number of coders in agreement
+#For example, in column agree.4 a "1" indicates 4 coders in agreement, a 0 indicates less than 4 in agreement
+
+# reference dataframe includes complete cleaned info that can be subsetted for display data
+
+# reference dataframe includes complete cleaned info that can be subsetted for display data
+ref <- jmha.2 %>% 
+    mutate(agree.4 = ifelse( determineWho 	== 4, "1",
+                            ifelse(hatsHelp==4, "1",
+                                          ifelse(know==4,"1",
+                                                 ifelse(feelings==4,"1",
+                                                        ifelse(operational==4,"1",
+                                                               ifelse(notBelong==4,"1","0"))))))) %>% 
+    mutate(agree.3 = ifelse(determineWho==3, "1",
+                            ifelse(hatsHelp==3, "1",
+                                   ifelse(know==3,"1",
+                                          ifelse(feelings==3,"1",
+                                                 ifelse(operational==3,"1",
+                                                        ifelse(notBelong==3,"1","0"))))))) %>% 
+    mutate(agree.2 = ifelse(determineWho==2, "1",
+                            ifelse(hatsHelp==2, "1",
+                                   ifelse(know==2,"1",
+                                          ifelse(feelings==2,"1",
+                                                 ifelse(operational==2,"1",
+                                                        ifelse(notBelong==2,"1","0"))))))) %>% 
+    mutate(agree.1 = ifelse(determineWho==1, "1",
+                            ifelse(hatsHelp==1, "1",
+                                   ifelse(know==1,"1",
+                                          ifelse(feelings==1,"1",
+                                                 ifelse(operational==1,"1",
+                                                        ifelse(notBelong==1,"1","0")))))))
+
+
+
+
+### Guidance
+
+#Renames columns
+#For example, the old column name is textI.jb the new name is textID
+
+
+# reference dataframe includes complete cleaned info that can be subsetted for display data
+                                                        
+ref1 <- ref %>% 
+     mutate(agree = ifelse(agree.4 == 1, "4",
+                           ifelse(agree.3== 1, "3",
+                                  ifelse(agree.2==1,"2",
+                                         ifelse(agree.1==1,"1", "0")))))
+### Guidance
+
+#creates new columns which will be combined in a later step
+
+# creates a column with code label
+ref2 <- ref1 %>% 
+    mutate(catsDet = case_when(determineWho >= 1 ~ "Determining "))%>% 
+    mutate(catsRed= case_when(hatsHelp >= 1 ~ "HatsHelp ")) %>% 
+    mutate(catsKnow= case_when(know>= 1 ~ "Know ")) %>% 
+    mutate(catsOperational= case_when(operational>=1 ~ "Operational " )) %>% 
+    mutate(catsFeelings= case_when(feelings>= 1 ~ "Feelings ")) %>% 
+    mutate(catsNotBelong= case_when(notBelong >=1 ~ "Not_Belong "))
+
+
+## Guidance
+#Combines columns CatsDet through catsNotBelong and cleans up the extra spaces etc.
+
+ref3 <- ref2 %>% 
+  unite(Codes, catsDet:catsNotBelong) 
+
+ #creates a column  that combines all codes assigned to an excerpt
+ref4 <- ref3 %>%
+    mutate(Codes = str_replace_all(string = Codes, pattern = "_",
+                                   replacement = " ")) %>% 
+    mutate(Codes = str_replace_all(string = Codes, pattern = "NA",
+                                   replacement = "")) %>% 
+      mutate(Codes= str_trim(Codes, side = "both")) %>% 
+    mutate(Codes = str_replace_all(string = Codes, pattern = "  ",
+                               replacement = " "))
+
+# save file to Excel
+# Source file used to create data frames for tables
+#write.xlsx(ref4, file = "03.0720rel.xlsx")
+
+#########################################################
+#02 files begin here
+# Data prep coding
+
+# Import reliability source file (this is the same as the "ref4" file that's being saved in line 370
+#source<- read_excel("C:/Users/jbroski/Documents/AY19 Debrief Analysis/Analysis/2020-06-16 Reliability/01rel.xlsx")
+
+source <- ref4
+
+# remove unneeded columns
+source1 <- source %>% 
+  select(-textName, -round3cid.jb, -seltext.jb, -Column24, -Excerpt)
+
+#creates a new dataframe
+source2 <- source1 
+# Renames columns
+names(source2)[names(source2) == "Mae"] <- "Coder1"
+names(source2)[names(source2) == "Julie"] <- "Coder2"
+names(source2)[names(source2) == "Hannah"] <- "Coder3"
+names(source2)[names(source2) == "Amy"] <- "Coder4"
+
+#converts all column names to First letter uppper case
+source3 <- source2
+colnames(source3) <- stringr::str_to_title(colnames(source3))
+
+names(source3)
+# reorder the columns
+col_order <- c("Codes", "Coder1", "Coder2", "Coder3", "Coder4",  
+"Hatshelp", "Determinewho","Know", "Operational", "Feelings", "Notbelong", 
+"Agree.4", "Agree.3", "Agree.2", "Agree.1", "Agree", "Id", "Textid", "Excerpt")
+
+source4 <- source3[, col_order]
+
+############## the following code uses "coder1- coder4 instead of coder name
+
+agree4 <- source4 %>% 
+    select(
+    Codes, -Coder1, -Coder2, -Coder3, -Coder4,  
+               -Hatshelp, -Determinewho,-Know, -Operational, -Feelings, -Notbelong, 
+               Agree.4, -Agree.3, -Agree.2, -Agree.1, Agree, Textid,Id,Excerpt) %>% 
+               filter(Agree.4 == 1) %>% 
+  select( -Agree) %>% 
+  select(-Agree.4)
+
+
+
+agree3 <- source4 %>% 
+filter(Agree.3 == 1) %>% 
+    mutate(CodedBy3 = ifelse(Determinewho	== 3, "DetermineWho",
+    ifelse(Hatshelp==3, "HatsHelp",
+    ifelse(Know==3,"Know",
+    ifelse(Feelings==3,"Feelings",
+    ifelse(Operational==3,"Operational", 
+    ifelse(Notbelong==3, "NotBelong","0"))))))) %>% 
+    select(-Codes, 
+    -Hatshelp, -Determinewho, -Know,-Operational, -Feelings, -Notbelong,
+    -Agree.4, -Agree.3, -Agree.2, -Agree.1, -Agree) %>% 
+      select(CodedBy3, everything())
+    
+agree2 <- source4 %>% 
+filter(Agree <= 2) %>% 
+ select(-Codes, 
+    -Hatshelp, -Determinewho, -Know,-Operational, -Feelings, -Notbelong,
+    -Agree.4, -Agree.3, -Agree.2, -Agree.1, -Agree) 
+
+#-----------------------------------------------------------
+
+#write.xlsx(agree4, file = "03rel.Agree4.xlsx")
+#write.xlsx(agree3, file = "03rel.Agree3.xlsx")
+#write.xlsx(agree2, file = "03rel.Agree2.xlsx")
+
+```
+
+## Excerpts with 100% Coder Agreement
+
+Excerpts with 100% coder agreement (Table 1) include all debriefing discussion excerpts associated with "Declaring leadership", and all coders agreed about the category the excerpt should be associated with.
+
+
+Click on the black triangle in the "Codes" column to view the excerpts associated with that code.
+
+
+```  {r 4agreeTable, message=FALSE, warning=FALSE, echo=FALSE}
+
+reactable(agree4,
+          groupBy = "Codes",
+          showSortIcon=TRUE,
+          striped=TRUE,
+          searchable = TRUE,
+          pagination = FALSE,
+          highlight = TRUE,    
+          columns = list(
+            Excerpt = colDef(width = 650),
+            Textid = colDef(width = 80),
+            Codes = colDef(width= 100)))
+ 
+```
+
+
+# Excerpts with 75% Coder Agreement
+
+Excerpts with 75% coder agreement (3 out 4 coders agreed on the code for the excerpt)
+All excerpts with less than 100% coder agreement will be reviewed to understand coder differences.
+Differences in how excerpts were categorized by coders can occur due to:
+1. Coder error (coder selected a category by mistake)
+2. Differences in how coders understand the definition. This often occurs early in the coding process because the definitions haven't been fully developed. Coder differences often help us understand that there is something about the code definition or framework that needs to be revised.
+3. Excerpts that fit within two categories
+4. Differences in how coders understand and interpret the excerpt.
+
+The numbers listed next to the code name in the column "Code Assigned by 3 Coders" indicates the number of excerpts that 3 coders assigned to a specific code. For example, Know(8), indicates 8 excerpts were coded 
+
+
+```  {r 3agreeTable, message=FALSE, warning=FALSE, echo=FALSE}
+
+reactable(agree3,
+    groupBy = "CodedBy3",
+          showSortIcon=TRUE,
+          striped=TRUE,
+          pagination = FALSE,
+          highlight = TRUE,    
+          columns = list(
+            Excerpt = colDef(width = 500),
+            Textid = colDef(width = 80),
+            Coder1 = colDef(width= 80),
+             Coder2 = colDef(width= 80),
+              Coder3 = colDef(width= 80),
+               Coder4 = colDef(width= 80),
+               CodedBy3 = colDef(name="Code Assigned by 3 Coders", width =80)))
+     
+```
+
+## Excerpts with 50% or less Coder Agreement
+
+Two or fewer coders agreed on categories for the excerpts below.
+
+All excerpts with less than 100% coder agreement will be reviewed to understand coder differences.
+Differences in how excerpts were categorized by coders can occur due to:
+1. Coder error (coder selected a category by mistake)
+2. Differences in how coders understand the definition. This often occurs early in the coding process because the definitions haven't been fully developed. Coder differences often help us understand that there is something about the code definition or framework that needs to be revised.
+3. Excerpts that fit within two categories
+4. Differences in how coders understand and/or interpret the excerpt.
+
+```  {r 2agreeTable, message=FALSE, warning=FALSE, echo=FALSE}
+
+reactable(agree2,
+          showSortIcon=TRUE,
+          striped=TRUE,
+          pagination = FALSE,
+          highlight = TRUE,    
+          columns = list(
+            Excerpt = colDef(width = 650),
+            Textid = colDef(width = 80),
+            Coder1 = colDef(width= 100),
+             Coder2 = colDef(width= 100),
+              Coder3 = colDef(width= 100),
+               Coder4 = colDef(width= 100)))
+     
+    
+```
